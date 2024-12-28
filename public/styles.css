@@ -1,0 +1,53 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #333;
+}
+
+nav {
+  background-color: green;
+  color: white;
+  padding: 10px 0;
+}
+
+nav ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+}
+
+nav ul li {
+  margin: 0 15px;
+}
+
+nav ul li a {
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+nav ul li a:hover {
+  text-decoration: underline;
+}
+
+/* Editor Page Styles */
+body.editor-page {
+    background-color: #2c2c2c;
+    color: white;
+  }
+  
+#editor {
+    width: 90%;
+    height: 80vh;
+    margin: 20px auto;
+    display: block;
+    background-color: #2c2c2c;
+    color: white;
+    border: none;
+    padding: 10px;
+    font-size: 16px;
+    font-family: 'Courier New', Courier, monospace;
+}

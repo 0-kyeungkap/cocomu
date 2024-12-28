@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Document Editor</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* 에디터 컨테이너 스타일 */
+        #editor-container {
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            color: white;
+            background-color: #1e1e1e;
+            /* 배경색 추가 */
+            min-height: 100vh;
+            /* 전체 화면 높이 */
+        }
+
+        /* .editable 클래스 스타일 */
+        .editable {
+            background-color: #2c2c2c;
+            color: white;
+            width: 80%;
+            /* 가독성을 위해 너비를 80%로 설정 */
+            min-height: 30px;
+            resize: vertical;
+            padding: 10px;
+            border: 1px solid #555;
+            overflow: auto;
+            font-family: monospace;
+            margin-bottom: 5px;
+            outline: none;
+            /* 포커스 시 커스터마이징된 테두리 */
+            transition: border 0.3s;
+            margin: 0 auto;
+        }
+
+        .editable:focus {
+            border: 1px solid #007acc;
+            /* 포커스 시 테두리 색상 변경 */
+        }
+
+        /* 커서 위치 표시 요소 스타일 */
+        #caret-position {
+            margin-top: 10px;
+            font-family: monospace;
+            background-color: #333;
+            padding: 5px;
+            border-radius: 4px;
+        }
+
+        /* 네비게이션 바 스타일 */
+        nav ul {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        nav li {
+            float: left;
+        }
+
+        nav li a {
+            display: block;
+            color: white;
+            text-align: center;
+            padding: 14px 16px;
+            text-decoration: none;
+        }
+
+        nav li a:hover {
+            background-color: #111;
+        }
+
+        /* 반응형 디자인 추가 (필요 시) */
+        @media (max-width: 600px) {
+            .editable {
+                font-size: 14px;
+            }
+
+            nav li a {
+                padding: 10px 12px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 네비게이션 바 -->
+    <nav>
+        <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/editor">Editor</a></li>
+        </ul>
+    </nav>
+
+    <!-- 에디터 컨테이너 -->
+    <div id="editor-container">
+        <!-- 초기 editable div -->
+        <div class="editable" contenteditable="true">
+            여기에 입력하세요... 여기서도 뭔가 문장의 엱ㅇ이 이루어질 수 있다는 사실이 내 감정을 불쾌하게 만들었다
+        </div>
+        <!-- 커서 위치를 표시할 요소 -->
+        <div id="caret-position">커서 위치: X=0px, Y=0px</div>
+    </div>
+
+    <!-- 메인 스크립트: utils.js 모듈 가져오기 -->
+    <script type="module">
+        import {
+            getCaretCoordinates,
+            escapeHtml,
+            findPreviousEditableDiv,
+            findNextEditableDiv,
+            setCursorToStart,
+            setCursorToEnd,
+            isCursorOnFirstLine,
+            isCursorOnLastLine,
+            setCursorClosestToX,
+            getCaretPosition,
+            setCaretPosition
+        } from './utils.js';
+
+        // 요소 선택
+        const editorContainer = document.getElementById('editor-container');
+        const caretPosition = document.getElementById('caret-position');
+
+        // 구성 상태를 추적하는 플래그
+        let isComposing = false;
+
+        // 원하는 X 좌표를 저장하는 변수
+        let desiredX = 0;
+
+        /**
+         * 커서 위치를 업데이트하고 desiredX를 저장하는 핸들러 함수
+         * @param {HTMLElement} editable - 현재 포커스된 editable div
+         */
+        function handleCaretPosition(editable) {
+            const coords = getCaretCoordinates(editable, caretPosition);
+            desiredX = coords.x;
+        }
+
+        /**
+         * 새로 생성된 editable div로 커서를 이동시키는 함수
+         * @param {HTMLElement} editable - 커서를 이동시킬 editable div
+         * @param {string} position - 'start' 또는 'end'
+         */
+        function moveCursorToEditable(editable, position = 'start') {
+            setTimeout(() => {
+                editable.focus();
+                if (position === 'start') {
+                    setCursorToStart(editable);
+                } else if (position === 'end') {
+                    setCursorToEnd(editable);
+                }
+            }, 0);
+        }
+
+        /**
+         * 엔터키 처리를 위한 핸들러 함수
+         * @param {KeyboardEvent} event - 키보드 이벤트
+         * @param {HTMLElement} editable - 현재 포커스된 editable div
+         */
+        function handleEnterKey(event, editable) {
+            if (event.key === 'Enter') {
+                event.preventDefault(); // 기본 엔터키 동작 방지
+
+                const selection = window.getSelection();
+                if (!selection.rangeCount) return;
+
+                const range = selection.getRangeAt(0).cloneRange();
+
+                // Range를 현재 editable div의 시작으로 설정하여 before 콘텐츠 범위 생성
+                const beforeRange = range.cloneRange();
+                beforeRange.selectNodeContents(editable);
+                beforeRange.setEnd(range.startContainer, range.startOffset);
+
+                // Range를 현재 editable div의 끝으로 설정하여 after 콘텐츠 범위 생성
+                const afterRange = range.cloneRange();
+                afterRange.selectNodeContents(editable);
+                afterRange.setStart(range.startContainer, range.startOffset);
+
+                // before 콘텐츠 추출
+                const beforeFragment = beforeRange.cloneContents();
+                const beforeContent = fragmentToHTML(beforeFragment);
+
+                // after 콘텐츠 추출
+                const afterFragment = afterRange.cloneContents();
+                const afterContent = fragmentToHTML(afterFragment);
+
+                // 기존 editable div의 내용을 beforeContent로 업데이트
+                editable.innerHTML = beforeContent;
+
+                // 새로운 editable div 생성 및 afterContent 설정
+                const newEditable = createNewEditableDiv(editable, afterContent);
+
+                // 커서를 새로운 div로 이동
+                setTimeout(() => {
+                    moveCursorToEditable(newEditable, 'start');
+                    const prevState = captureEditorState();
+                    undoManager.pushState(prevState);
+                }, 0);
+            }
+        }
+
+        // HTML Fragment를 문자열로 변환하는 유틸리티 함수
+        function fragmentToHTML(fragment) {
+            const div = document.createElement('div');
+            div.appendChild(fragment.cloneNode(true));
+            return div.innerHTML;
+        }
+
+        /**
+         * 새로운 editable div를 생성하여 에디터 컨테이너에 추가하는 함수
+         * @param {HTMLElement} referenceDiv - 새로운 div를 삽입할 기준이 되는 div
+         * @param {string} [content] - 새로운 div에 추가할 초기 내용
+         * @returns {HTMLElement} - 생성된 editable div
+         */
+        function createNewEditableDiv(referenceDiv, content = '') {
+            const newDiv = document.createElement('div');
+            newDiv.classList.add('editable');
+            newDiv.setAttribute('contenteditable', 'true');
+            newDiv.innerHTML = content ? content : '\u200b'; // 빈 div는 제로 폭 공백 추가
+
+            // referenceDiv의 다음 형제로 삽입
+            referenceDiv.parentNode.insertBefore(newDiv, referenceDiv.nextSibling);
+
+            return newDiv;
+        }
+
+        /**
+         * 빈 editable div에서 백스페이스 키를 눌렀을 때 div를 삭제하는 핸들러 함수
+         * @param {KeyboardEvent} event - 키보드 이벤트
+         * @param {HTMLElement} editable - 현재 포커스된 editable div
+         */
+        function handleBackspaceKey(event, editable) {
+            if (event.key === 'Backspace') {
+                // editable div의 내용이 비어있거나 제로 폭 공백만 있는지 확인
+                const content = editable.innerHTML.trim();
+                if (content === '' || content === '\u200b') {
+                    event.preventDefault(); // 기본 백스페이스 동작 방지
+
+                    const previousDiv = findPreviousEditableDiv(editable);
+                    const parent = editable.parentNode;
+
+                    // 현재 editable div 삭제
+                    parent.removeChild(editable);
+
+                    if (previousDiv) {
+                        // 이전 div가 있을 경우 커서를 이전 div의 끝으로 이동
+                        setTimeout(() => {
+                            moveCursorToEditable(previousDiv, 'end');
+                        }, 0);
+                    } else {
+                        // 이전 div가 없을 경우 새로운 빈 div 생성 및 커서 이동
+                        const newEditable = createNewEditableDiv(parent, '');
+                        setTimeout(() => {
+                            moveCursorToEditable(newEditable, 'start');
+                        }, 0);
+                    }
+                }
+            }
+        }
+
+        /**
+         * 이벤트 위임을 사용하여 모든 editable div에 대해 이벤트 핸들링
+         */
+        editorContainer.addEventListener('keydown', (event) => {
+            const target = event.target;
+            if (!target.classList.contains('editable')) return;
+
+            if (event.key === 'Enter') {
+                if (isComposing) {
+                    // 구성 중일 때는 엔터키 처리하지 않음
+                    return;
+                }
+                handleEnterKey(event, target);
+            }
+            else if (event.key === 'ArrowUp') {
+                if (isComposing) return;
+
+                // 커서가 첫 번째 줄에 있는지 확인
+                const onFirstLine = isCursorOnFirstLine(target);
+
+                if (onFirstLine) {
+                    event.preventDefault();
+                    const previousDiv = findPreviousEditableDiv(target);
+                    if (previousDiv) {
+                        // 이전 div의 마지막 위치로 커서 설정
+                        setCursorClosestToX(previousDiv, desiredX, 'last');
+                    }
+                }
+                // else: 기본 동작 수행 (커서를 위로 이동)
+            }
+            else if (event.key === 'ArrowDown') {
+                if (isComposing) return;
+
+                // 커서가 마지막 줄에 있는지 확인
+                const onLastLine = isCursorOnLastLine(target);
+
+                if (onLastLine) {
+                    event.preventDefault();
+                    const nextDiv = findNextEditableDiv(target);
+                    if (nextDiv) {
+                        // 다음 div의 첫 번째 위치로 커서 설정
+                        setCursorClosestToX(nextDiv, desiredX, 'first');
+                    }
+                }
+                // else: 기본 동작 수행 (커서를 아래로 이동)
+            }
+            else if (event.key === 'Backspace') {
+                if (isComposing) return;
+                handleBackspaceKey(event, target);
+            }
+        });
+
+        // 커서 위치 업데이트 이벤트 핸들러 등록
+        const updateCaretEvents = ['keyup', 'click', 'input', 'mouseup'];
+        updateCaretEvents.forEach(eventType => {
+            editorContainer.addEventListener(eventType, (event) => {
+                const target = event.target;
+                if (target.classList.contains('editable')) {
+                    handleCaretPosition(target);
+                }
+            });
+        });
+
+        // 구성 시작 시 플래그 설정
+        editorContainer.addEventListener('compositionstart', () => {
+            isComposing = true;
+        });
+
+        // 구성 종료 시 플래그 해제 및 커서 위치 업데이트
+        editorContainer.addEventListener('compositionend', (event) => {
+            isComposing = false;
+            const target = event.target;
+            if (target.classList.contains('editable')) {
+                handleCaretPosition(target);
+            }
+        });
+
+        // 페이지 로드 시 초기 커서 위치 설정
+        window.addEventListener('load', () => {
+            const initialEditable = editorContainer.querySelector('.editable');
+            handleCaretPosition(initialEditable);
+            const prevState = captureEditorState();
+            undoManager.pushState(prevState);
+        });
+
+        class UndoManager {
+            constructor() {
+                this.undoStack = [];
+                this.currentIndex = -1;
+                this.isUndoing = false;
+            }
+
+            pushState(editorState) {
+                if (this.isUndoing) return;
+                // Remove any future states if we're in the middle of the stack
+                this.undoStack = this.undoStack.slice(0, this.currentIndex + 1);
+                this.undoStack.push(editorState);
+                this.currentIndex++;
+            }
+
+            undo() {
+                if (this.currentIndex < 0) return null;
+                this.isUndoing = true;
+                this.currentIndex--;
+                const state = this.undoStack[this.currentIndex];
+                this.isUndoing = false;
+
+                return state;
+            }
+        }
+        // In your existing script section, add:
+        const undoManager = new UndoManager();
+
+        function captureEditorState() {
+            const editables = Array.from(document.querySelectorAll('.editable'));
+            return editables.map(div => ({
+                content: div.innerHTML
+            }));
+        }
+
+        function restoreEditorState(state) {
+            if (!state) return;
+
+            // Remove all existing editable divs
+            const editables = document.querySelectorAll('.editable');
+            editables.forEach(div => div.remove());
+
+            // Restore divs from state
+            const container = document.getElementById('editor-container');
+            state.forEach(divState => {
+                console.log(divState);
+                const div = document.createElement('div');
+                div.className = 'editable';
+                div.setAttribute('contenteditable', 'true');
+                div.innerHTML = divState.content;
+                container.insertBefore(div, caretPosition);
+            });
+        }
+
+        editorContainer.addEventListener('keydown', (event) => {
+            const target = event.target;
+            if (!target.classList.contains('editable')) return;
+
+            // Handle undo shortcut
+            if ((event.ctrlKey || event.metaKey) && event.key === 'z' && !event.shiftKey) {
+                //event.preventDefault();
+                console.log("Undo shortcut pressed");
+                const previousState = undoManager.undo();
+                if (previousState) {
+                    console.log('there is a previous state');
+                    restoreEditorState(previousState);
+                }
+                return;
+            }
+        });
+    </script>
+</body>
+
+</html>
