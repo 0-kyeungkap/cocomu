@@ -51,3 +51,78 @@ body.editor-page {
     font-size: 16px;
     font-family: 'Courier New', Courier, monospace;
 }
+
+/* 에디터 컨테이너 스타일 */
+#editor-container {
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  color: white;
+  background-color: #1e1e1e;
+  min-height: 100vh;
+}
+
+/* .editable 클래스 스타일 */
+.editable {
+  background-color: #2c2c2c;
+  color: white;
+  width: 80%;
+  min-height: 25px;
+  resize: vertical;
+  padding: 10px;
+  border: 1px solid #555;
+  overflow: auto;
+  font-family: monospace;
+  margin-bottom: 5px;
+  outline: none;
+  transition: border 0.3s;
+  margin: 0 auto;
+  resize: none;
+}
+
+.editable:focus {
+  border: 1px solid #007acc;
+}
+
+/* 커서 위치 표시 요소 스타일 */
+#caret-position {
+  margin-top: 10px;
+  font-family: monospace;
+  background-color: #333;
+  padding: 5px;
+  border-radius: 4px;
+}
+
+/* 네비게이션 바 스타일 */
+nav ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+nav li {
+  float: left;
+}
+
+nav li a {
+  display: block;
+  color: white;
+  text-align: center;
+  padding: 14px 16px;
+  text-decoration: none;
+}
+
+nav li a:hover {
+  background-color: #111;
+}
+
+/* 반응형 디자인 추가 (필요 시) */
+@media (max-width: 600px) {
+  .editable {
+      font-size: 14px;
+  }
+
+  nav li a {
+      padding: 10px 12px;
+  }
+}
