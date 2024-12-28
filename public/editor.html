@@ -494,6 +494,8 @@
             const target = event.target;
             if (!target.classList.contains('editable')) return;
 
+            const key = event.key.toLowerCase();
+
             // Handle undo shortcut
             if ((event.ctrlKey || event.metaKey) && event.key === 'z' && !event.shiftKey) {
                 event.preventDefault(); // 기본 Undo 동작 방지
@@ -507,11 +509,10 @@
             // Redo 단축키 처리 (Ctrl+Y 또는 Cmd+Shift+Z)
             if (
                 (event.ctrlKey || event.metaKey) &&
-                (event.key === 'y' || (event.key === 'Z' && event.shiftKey))
+                (key === 'y' || (key === 'z' && event.shiftKey))
             ) {
                 event.preventDefault(); // 기본 Redo 동작 방지
                 const nextState = undoManager.redo();
-                console.log('Next state:', nextState);
                 if (nextState) {
                     restoreEditorState(nextState);
                 }
