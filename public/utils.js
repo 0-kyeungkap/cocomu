@@ -47,67 +47,33 @@ export function getCaretCoordinates(editableElement, caretPositionElement) {
   return { x, y };
 }
 
-// utils.js
+/**
+ * 커서의 문자 오프셋을 반환하는 함수
+ * @param {HTMLElement} element - 현재 포커스된 editable div
+ * @returns {number|null} - 문자 오프셋 또는 null
+ */
+export function getCaretCharacterOffsetWithin(element) {
+  let caretOffset = 0;
+  const doc = element.ownerDocument || element.document;
+  const win = doc.defaultView || doc.parentWindow;
+  const sel = win.getSelection();
 
-export function getCaretPosition(element) {
-  const selection = window.getSelection();
-  if (!selection.rangeCount) return null;
-  
-  const range = selection.getRangeAt(0);
-  if (!element.contains(range.startContainer)) return null;
-
-  console.log({
-    node: range.startContainer,
-    offset: range.startOffset
-  });
-  
-  return {
-    node: range.startContainer,
-    offset: range.startOffset
-  };
-}
-
-// 텍스트 노드를 재귀적으로 찾는 유틸리티 함수
-function findTextNode(node) {
-  if (node.nodeType === Node.TEXT_NODE) {
-    return node;
+  if (sel.rangeCount > 0) {
+    const range = sel.getRangeAt(0);
+    const preCaretRange = doc.createRange();
+    preCaretRange.selectNodeContents(element);
+    preCaretRange.setEnd(range.endContainer, range.endOffset);
+    caretOffset = preCaretRange.toString().length;
   }
-  for (let child of node.childNodes) {
-    const textNode = findTextNode(child);
-    if (textNode) return textNode;
-  }
-  return null;
-}
-
-export function getSelectedDiv() {
-  const selection = window.getSelection();
-  if (!selection.rangeCount) return null;
-
-  const range = selection.getRangeAt(0);
-  const focusNode = selection.focusNode;
-
-  let currentDiv = focusNode.nodeType === Node.TEXT_NODE ? focusNode.parentElement : focusNode;
-
-  currentDiv = currentDiv.closest('.editable');
-
-  if (!currentDiv) return null;
-
-  let position = 0;
-  if (focusNode.nodeType === Node.TEXT_NODE) {
-    position = range.endOffset;
-  } else {
-    position = 0;
-  }
-
-  return currentDiv;
+  return caretOffset;
 }
 
 /**
  * contenteditable 요소 내에서 커서 위치를 설정하는 함수
  * @param {HTMLElement} element - contenteditable 요소
- * @param {number} position - 커서를 설정할 위치
+ * @param {number} offset - 커서를 설정할 문자 오프셋
  */
-export function setCaretPosition(element, position) {
+export function setCaretPosition(element, offset) {
   if (!element) return;
 
   const range = document.createRange();
@@ -116,20 +82,31 @@ export function setCaretPosition(element, position) {
   // 기존 선택 영역 제거
   sel.removeAllRanges();
 
-  // 텍스트 노드가 있는지 확인
-  let node = element.firstChild;
-  if (!node) {
-      // 요소가 비어있다면 빈 텍스트 노드를 추가
-      node = document.createTextNode('');
-      element.appendChild(node);
+  let currentOffset = 0;
+  let node = null;
+  let nodeOffset = 0;
+
+  function traverseNodes(node) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const textLength = node.textContent.length;
+      if (currentOffset + textLength >= offset) {
+        nodeOffset = offset - currentOffset;
+        range.setStart(node, nodeOffset);
+        range.collapse(true);
+        sel.addRange(range);
+        return true; // 찾았으므로 종료
+      } else {
+        currentOffset += textLength;
+      }
+    } else {
+      for (let child of node.childNodes) {
+        if (traverseNodes(child)) return true;
+      }
+    }
+    return false;
   }
 
-  // 범위 설정
-  range.setStart(node, position);
-  range.collapse(true);
-
-  // 선택 영역에 범위 추가
-  sel.addRange(range);
+  traverseNodes(element);
 }
 
 /**
@@ -287,73 +264,6 @@ export function setCursorClosestToX(editable, desiredX, position = 'first') {
   if (targetY === null) {
     console.warn(`setCursorClosestToX: ${position} Y 위치를 확인할 수 없습니다.`);
     return;
-  }
-
-  /**
-   * 현재 커서의 Y 위치를 반환하는 헬퍼 함수
-   * @param {HTMLElement} editableElement
-   * @returns {number|null}
-   */
-  function getCursorYPosition(editableElement) {
-    const selection = window.getSelection();
-    if (!selection.rangeCount) return null;
-
-    const range = selection.getRangeAt(0).cloneRange();
-    range.collapse(true);
-
-    const span = document.createElement('span');
-    span.textContent = '\u200b'; // 제로 폭 공백
-    range.insertNode(span);
-    const rect = span.getBoundingClientRect();
-    const y = rect.top - parentRect.top;
-    span.parentNode.removeChild(span);
-
-    return y;
-  }
-
-  /**
-   * editable 요소의 시작 Y 위치를 반환하는 헬퍼 함수
-   * @param {HTMLElement} editableElement
-   * @returns {number|null}
-   */
-  function getStartYPosition(editableElement) {
-    const range = document.createRange();
-    range.setStart(editableElement.firstChild || editableElement, 0);
-    range.collapse(true);
-
-    const span = document.createElement('span');
-    span.textContent = '\u200b';
-    range.insertNode(span);
-    const rect = span.getBoundingClientRect();
-    const y = rect.top - parentRect.top;
-    span.parentNode.removeChild(span);
-
-    return y;
-  }
-
-  /**
-   * editable 요소의 끝 Y 위치를 반환하는 헬퍼 함수
-   * @param {HTMLElement} editableElement
-   * @returns {number|null}
-   */
-  function getEndYPosition(editableElement) {
-    const range = document.createRange();
-    const lastNode = editableElement.lastChild || editableElement;
-    if (lastNode.nodeType === Node.TEXT_NODE) {
-      range.setStart(lastNode, lastNode.textContent.length);
-    } else {
-      range.setStart(editableElement, editableElement.childNodes.length);
-    }
-    range.collapse(true);
-
-    const span = document.createElement('span');
-    span.textContent = '\u200b';
-    range.insertNode(span);
-    const rect = span.getBoundingClientRect();
-    const y = rect.top - parentRect.top;
-    span.parentNode.removeChild(span);
-
-    return y;
   }
 
   /**
