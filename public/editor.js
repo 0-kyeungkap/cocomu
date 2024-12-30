@@ -14,16 +14,12 @@ import {
 } from './utils.js';
 
 import {
-    renderEquation,
-    renderTitle,
-    renderHeading2,
-    renderHeading3, // H3 렌더링 함수 추가
     handleFocusOut
 } from './render.js';
 
 // 요소 선택
 const editorContainer = document.getElementById('editor-container');
-const caretPosition = document.getElementById('caret-position');
+const docState = document.getElementById('doc-state');
 
 // 구성 상태를 추적하는 플래그
 let isComposing = false;
@@ -43,7 +39,7 @@ function fragmentToHTML(fragment) {
  * @param {HTMLElement} editable - 현재 포커스된 editable div
  */
 function handleCaretPositionHandler(editable) {
-    const coords = getCaretCoordinates(editable, caretPosition);
+    const coords = getCaretCoordinates(editable, docState);
     desiredX = coords.x;
 }
 
@@ -250,6 +246,8 @@ editorContainer.addEventListener('keydown', (event) => {
                          previousDiv.classList.contains('heading2') ||
                          previousDiv.classList.contains('heading3')) {
                     transformHeadingToEditableDiv(previousDiv);
+                } else {
+                    previousDiv.classList.remove('body');
                 }
             }
             // else: 기본 동작 수행 (커서를 위로 이동)
@@ -276,12 +274,14 @@ editorContainer.addEventListener('keydown', (event) => {
                          nextDiv.classList.contains('heading2') ||
                          nextDiv.classList.contains('heading3')) {
                     transformHeadingToEditableDiv(nextDiv); // 수정
+                } else {
+                    nextDiv.classList.remove('body');
                 }
             }
             // else: 기본 동작 수행 (커서를 아래로 이동)
         }
     }
-    else if (event.key === 'Backspace') {
+    else if ((event.ctrlKey || event.metaKey) && event.key === 'Backspace') {
         if (isComposing) return;
         handleBackspaceKey(event, target);
     }
@@ -319,9 +319,14 @@ editorContainer.addEventListener('click', (event) => {
             return; // 해당 작업을 수행한 후 함수 종료
         }
 
-        if (headingClasses.some(cls => element.classList.contains(cls))) {
+        else if (headingClasses.some(cls => element.classList.contains(cls))) {
             transformHeadingToEditableDiv(element);
             return; // 해당 작업을 수행한 후 함수 종료
+        }
+
+        else {
+            console.log("HERE");
+            target.classList.remove('body');
         }
     }
 });
@@ -387,5 +392,5 @@ updateCaretEvents.forEach(eventType => {
 window.addEventListener('load', () => {
     const initialEditable = editorContainer.querySelector('.editable');
     handleCaretPositionHandler(initialEditable);
-    setCaretPosition(initialEditable, 0);
+    setCursorToEnd(initialEditable);
 });

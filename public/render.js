@@ -82,5 +82,7 @@ export function handleFocusOut(editable) {
         if (title.length > 0) {
             renderTitle(editable, title);
         }
+    } else {
+        editable.classList.add('body');
     }
 }

@@ -9,7 +9,7 @@
 export function getCaretCoordinates(editableElement, caretPositionElement) {
   if (!(editableElement instanceof HTMLElement) || !(caretPositionElement instanceof HTMLElement)) {
     console.error("getCaretCoordinates에 전달된 요소가 유효하지 않습니다.");
-    caretPositionElement.textContent = `커서 위치: X=0px, Y=0px`;
+    caretPositionElement.textContent = `커서 위치: (0px,0px)`;
     return { x: 0, y: 0 };
   }
 
@@ -17,7 +17,7 @@ export function getCaretCoordinates(editableElement, caretPositionElement) {
 
   // 선택된 범위가 없을 경우 커서 위치 초기화
   if (selection.rangeCount === 0) {
-    caretPositionElement.textContent = `커서 위치: X=0px, Y=0px`;
+    caretPositionElement.textContent = `커서 위치: (0px,0px)`;
     return { x: 0, y: 0 };
   }
 
@@ -39,7 +39,7 @@ export function getCaretCoordinates(editableElement, caretPositionElement) {
   const y = rect.top - parentRect.top;
 
   // 커서 위치 표시 업데이트
-  caretPositionElement.textContent = `커서 위치: X=${Math.round(x)}px, Y=${Math.round(y)}px`;
+  caretPositionElement.textContent = `커서 위치: (${Math.round(x)}px,${Math.round(y)}px)`;
 
   // 임시 span 요소 제거 (DOM 정리)
   tempSpan.parentNode.removeChild(tempSpan);

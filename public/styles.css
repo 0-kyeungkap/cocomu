@@ -1,12 +1,57 @@
+:root {
+  /* 배경 색상 */
+  --chalkboard-green: #274C43;
+  
+  /* 네비게이션 바 색상 */
+  --nav-background: #3A2F23;
+  --nav-hover-background: #4B3621;
+  
+  /* 제목 색상 (분필 색상) */
+  --chalk-white: #FFFFFF;
+  --chalk-cream: #F8F8FF;
+  --chalk-pale-yellow: #FFFFE0;
+  --chalk-light-blue: #ADD8E6;
+  --chalk-light-pink: #FFC0CB;
+  --chalk-light-green: #90EE90;
+  --chalk-light-orange: #FFA07A;
+  --chalk-light-purple: #DDA0DD;
+  
+  /* 버튼 색상 */
+  --button-background: #3A2F23;
+  --button-hover-background: #4B3621;
+  
+  /* 기타 색상 */
+  --text-shadow-color: #000000;
+  --hover-text-color: #FFD700;
+}
+
+
+/* ================================
+   Font Definitions
+   ================================ */
+/* 애플산돌고딕 폰트 적용 */
+@font-face {
+  font-family: "loveYouSon";
+  src: url("./loveYouSon.ttf") format("truetype");
+  font-weight: normal;
+}
+/* 이후 "SDGothic"으로 폰트 적용 가능 */
+
+/* ================================
+   Global Styles
+   ================================ */
 body {
   font-family: Arial, sans-serif;
   margin: 0;
   padding: 0;
-  background-color: #333;
+  background-color: #274c43;
 }
 
+/* ================================
+   Navigation Styles
+   ================================ */
 nav {
-  background-color: green;
+  background-color: #3B2F2F;
   color: white;
   padding: 10px 0;
 }
@@ -19,89 +64,8 @@ nav ul {
   justify-content: center;
 }
 
-nav ul li {
-  margin: 0 15px;
-}
-
-nav ul li a {
-  color: white;
-  text-decoration: none;
-  font-weight: bold;
-}
-
-nav ul li a:hover {
-  text-decoration: underline;
-}
-
-/* Editor Page Styles */
-body.editor-page {
-  background-color: #2c2c2c;
-  color: white;
-}
-
-#editor {
-  width: 90%;
-  height: 80vh;
-  margin: 20px auto;
-  display: block;
-  background-color: #2c2c2c;
-  color: white;
-  border: none;
-  padding: 10px;
-  font-size: 16px;
-  font-family: 'Courier New', Courier, monospace;
-}
-
-/* 에디터 컨테이너 스타일 */
-#editor-container {
-  display: flex;
-  flex-direction: column;
-  padding: 10px;
-  color: white;
-  background-color: #1e1e1e;
-  min-height: 100vh;
-}
-
-/* .editable 클래스 스타일 */
-.editable {
-  background-color: #2c2c2c;
-  color: white;
-  width: 80%;
-  min-height: 25px;
-  resize: vertical;
-  padding: 10px;
-  border: 1px solid #555;
-  overflow: auto;
-  font-family: monospace;
-  margin-bottom: 5px;
-  outline: none;
-  transition: border 0.3s;
-  margin: 0 auto;
-  resize: none;
-}
-
-.editable:focus {
-  border: 1px solid #007acc;
-}
-
-/* 커서 위치 표시 요소 스타일 */
-#caret-position {
-  margin-top: 10px;
-  font-family: monospace;
-  background-color: #333;
-  padding: 5px;
-  border-radius: 4px;
-}
-
-/* 네비게이션 바 스타일 */
-nav ul {
-  list-style-type: none;
-  margin: 0;
-  padding: 0;
-}
-
 nav li {
-  float: left;
+  margin: 0 15px;
 }
 
 nav li a {
@@ -110,55 +74,167 @@ nav li a {
   text-align: center;
   padding: 14px 16px;
   text-decoration: none;
+  font-weight: bold;
+  transition: background-color 0.3s, text-decoration 0.3s;
 }
 
 nav li a:hover {
   background-color: #111;
+  text-decoration: underline;
 }
 
-/* 반응형 디자인 추가 (필요 시) */
+/* ================================
+   Editor Page Styles
+   ================================ */
+body.editor-page {
+  background-color: #2c2c2c;
+  color: white;
+}
+
+#editor-container {
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  background-color: #274c43;
+  color: white;
+  min-height: 100vh;
+}
+
+#editor {
+  width: 90%;
+  height: 80vh;
+  margin: 20px auto;
+  background-color: #2c2c2c;
+  color: white;
+  border: none;
+  padding: 10px;
+  font-size: 16px;
+  font-family: 'SDGothic', serif;
+}
+
+/* ================================
+   Editable Elements
+   ================================ */
+.editable {
+  background-color: #2c2c2c;
+  color: white;
+  width: 80%;
+  min-height: 25px;
+  padding: 6px 10px 6px 46px; /* 패딩 감소 */
+  border: none;
+  overflow: auto;
+  font-family: 'loveYouSon';
+  font-weight: bold;
+  margin: 0 auto 5px !important;
+  outline: none;
+  transition: border 0.3s;
+  resize: none;
+  /* 글자 크기 추가 */
+  font-size: 30px; /* 원하는 크기로 조정하세요 */
+}
+
+.editable.body {
+  background-color: #274c43;
+}
+
+.editable:focus {
+  border: 1px solid #007acc;
+}
+
+/* ================================
+   Caret Position Indicator
+   ================================ */
+#doc-state {
+  margin-top: 10px;
+  font-family: monospace;
+  background-color: #333;
+  padding: 5px;
+  border-radius: 4px;
+}
+
+/* ================================
+   Responsive Design
+   ================================ */
 @media (max-width: 600px) {
+  /*
   .editable {
     font-size: 14px;
   }
-
   nav li a {
     padding: 10px 12px;
   }
+  */
 }
 
-/* 추가된 스타일 */
-/* 수정된 스타일 */
+/* ================================
+   Equation Styles
+   ================================ */
 .equation {
-  background-color: #2c2c2c;
-  /* 어두운 배경 */
-
-  padding: 10px;
-  border-left: 3px solid #4CAF50;
+  background-color: #274c43;
+  padding: 4px 28px;
+  /* border-left: 3px solid #4CAF50; */
   cursor: default;
+  transition: background-color 0.3s;
 }
 
 .equation:hover {
   background-color: #3d3d3d;
 }
 
-/* MathJax 수식이 흰색으로 표시되도록 설정 */
-.equation .MathJax {
-  color: inherit;
-}
-
+.equation .MathJax,
 .equation .mjx-chtml {
   color: inherit !important;
+}
+
+/* ================================
+   Heading Styles
+   ================================ */
+h1, h2, h3 {
+  margin: 0;
+  padding: 0;
 }
 
 .heading1,
 .heading2,
 .heading3 {
-  background-color: #2c2c2c;
-  /* 밝은 배경 */
-  color: white;
-  /* 어두운 텍스트 */
-  padding: 8px 10px;
-  border-left: 3px solid #FF9800;
   cursor: default;
+  background-color: #274c43; /* 공통 배경색 */
+  color: #F8F8FF;
+  border: none;
+  text-shadow:
+    1px 1px 0 #000, /* 약간의 그림자 추가 */
+    -1px -1px 0 #000,
+    1px -1px 0 #000,
+    -1px 1px 0 #000;
+
+    /* 마진 조정 */
+    margin-top: 10px;    /* 상단 마진을 줄임 */
+    margin-bottom: 10px; /* 하단 마진을 줄임 */
+}
+
+.heading1:hover,
+.heading2:hover,
+.heading3:hover {
+  background-color: #3d3d3d;
+}
+
+.heading1 {
+  padding: 4px 40px 4px 16px; /* 패딩 감소 */
+  font-size: 40px; /* 글씨 크기 감소 */
+  font-weight: bold;
+  /* border-left: 4px solid #FF5722;  테두리 두께 감소 */
+}
+
+.heading2 {
+  padding: 4px 30px 4px 26px; /* 패딩 감소 */
+  font-size: 35px; /* 글씨 크기 감소 */
+  font-weight: 1500; /* semi-bold 대신 숫자 값 사용 */
+  /* border-left: 3px solid #4CAF50; 테두리 두께 감소 */
+}
+
+.heading3 {
+  padding: 4px 20px 4px 36px; /* 패딩 감소 */
+  font-size: 35px; /* 글씨 크기 감소 */
+  font-weight: normal;
+  /* border-left: 2px solid #2196F3; 테두리 두께 감소 */
 }
